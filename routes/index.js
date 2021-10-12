@@ -57,4 +57,45 @@ router.post('/signup', (req, res, next) => {
 	);
 });
 
+router.get('/login', (req, res) => {
+	if (!req.headers.email) {
+		return badRequestHandler(res, 'Error: User email is not specified!');
+	}
+
+	if (!req.headers.pw) {
+		return badRequestHandler(res, 'Error: User password is not specified!');
+	}
+
+	const userEmail = req.headers.email;
+	const userPassword = req.headers.pw;
+
+	User.findOne({ where: { email: userEmail.toLowerCase() } }).then(
+		(user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User does not exist', { user_exists: false });
+			}
+
+			bcrypt.compare(userPassword, user.password).then((result) => {
+				if (result) {
+					const authToken = jwt.sign(user.id, req.app.get('superSecret'));
+
+					return res.json({
+						message: 'User logged in successfully!',
+						user,
+						user_exists: true,
+						auth_token: authToken
+					});
+				}
+
+				return badRequestHandler(res, 'Invalid credentials', { user_exists: true });
+			}).catch((err) => {
+				return serverErrorHandler(res, 'Error: Failed to verify password in login', err, { user_exists: true });
+			});
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user profile in login', err);
+		}
+	);
+});
+
 module.exports = router;
