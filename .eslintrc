@@ -27,6 +27,7 @@
     "no-param-reassign": 0,
     "no-tabs": 0,
     "indent": ["error", "tab"],
-    "no-shadow": 0
+    "no-shadow": 0,
+    "arrow-body-style": 0
   }
 }
