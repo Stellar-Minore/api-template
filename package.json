@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "lint": "eslint .",
+    "fix-lint": "eslint . --fix"
   },
   "dependencies": {
     "aws-sdk": "^2.1005.0",
