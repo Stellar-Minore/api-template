@@ -1,26 +1,26 @@
 {
   "development": {
-    "username": "root",
-    "password": "mysqladmin",
-    "database": "database_development",
+    "username": "admin",
+    "password": "[project-name]admin",
+    "database": "[project-name]_main",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "superSecret": "apitemplate2021"
+    "superSecret": "[project-name]2021"
   },
   "test": {
-    "username": "root",
-    "password": "mysqladmin",
-    "database": "database_test",
+    "username": "admin",
+    "password": "[project-name]admin",
+    "database": "[project-name]_main",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "superSecret": "apitemplate2021"
+    "superSecret": "[project-name]2021"
   },
   "production": {
-    "username": "root",
-    "password": "mysqladmin",
-    "database": "database_production",
+   "username": "admin",
+    "password": "[project-name]admin",
+    "database": "[project-name]_main",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "superSecret": "apitemplate2021"
+    "superSecret": "[project-name]2021"
   }
 }
