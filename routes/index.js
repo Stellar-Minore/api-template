@@ -85,7 +85,8 @@ router.get('/login', (req, res) => {
 
 			bcrypt.compare(userPassword, user.password).then((result) => {
 				if (result) {
-					const authToken = jwt.sign(user.id, req.app.get('superSecret'));
+					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+					const authToken = jwt.sign(user.id, accessTokenPrivateKey, { algorithm: 'RS256' });
 
 					return res.json({
 						message: 'User logged in successfully!',
