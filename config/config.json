@@ -5,7 +5,9 @@
     "database": "[project-name]_main",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "superSecret": "[project-name]2021"
+    "superSecret": "[project-name]2021",
+    "accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\npublic-key\n-----END PUBLIC KEY-----",
+    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----"
   },
   "test": {
     "username": "admin",
@@ -13,7 +15,9 @@
     "database": "[project-name]_main",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "superSecret": "[project-name]2021"
+    "superSecret": "[project-name]2021",
+		"accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\npublic-key\n-----END PUBLIC KEY-----",
+    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----"
   },
   "production": {
    "username": "admin",
@@ -21,6 +25,8 @@
     "database": "[project-name]_main",
     "host": "127.0.0.1",
     "dialect": "mysql",
-    "superSecret": "[project-name]2021"
+    "superSecret": "[project-name]2021",
+		"accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\npublic-key\n-----END PUBLIC KEY-----",
+    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----"
   }
 }
