@@ -1,5 +1,9 @@
 const express = require('express');
 
+const env = process.env.NODE_ENV || 'development';
+const path = require('path');
+
+const config = require(path.join(__dirname, '/../config/config.json'))[env];
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -32,13 +36,17 @@ router.post('/signup', (req, res, next) => {
 
 						User.create({ email: userEmail, password: hash }).then(
 							(new_user) => {
-								const auth_token = jwt.sign(new_user.id, req.app.get('superSecret'));
+								const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+								const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
+								const accessToken = jwt.sign({ user_id: new_user.id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+								const newRefreshToken = jwt.sign({ user_id: new_user.id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
 
 								return res.json({
 									message: 'User Created!',
 									user: new_user,
-									auth_token,
-									user_exists: false
+									user_exists: false,
+									access_token: accessToken,
+									refresh_token: newRefreshToken
 								});
 							},
 							(err) => {
