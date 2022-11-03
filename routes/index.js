@@ -7,7 +7,7 @@ const config = require(path.join(__dirname, '/../config/config.json'))[env];
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { badRequestHandler, serverErrorHandler } = require('../helpers/errorHandlers');
+const { badRequestHandler, serverErrorHandler, forbiddenClientHandler } = require('../helpers/errorHandlers');
 const User = require('../models').user;
 const UserToken = require('../models').user_token;
 
@@ -133,6 +133,47 @@ router.get('/login', (req, res) => {
 		},
 		(err) => {
 			return serverErrorHandler(res, 'Error: Failed to fetch user profile in login', err);
+		}
+	);
+});
+
+/* GET access token. */
+router.get('/access_token', (req, res) => {
+	const refreshToken = req.cookies.refresh_token;
+
+	if (!refreshToken) {
+		return badRequestHandler(res, 'Error: Refresh token cookie not found');
+	}
+
+	UserToken.findOne({
+		where: { refresh_token: refreshToken }
+	}).then(
+		(userToken) => {
+			if (!userToken) {
+				return badRequestHandler(res, 'Error: User token does not exist in GET access token!');
+			}
+			const refreshTokenPublicKey = config.refreshTokenPublicKey.replace(/\\n/g, '\n');
+
+			jwt.verify(refreshToken, refreshTokenPublicKey, { algorithm: 'RS256' }, async (err, decoded) => {
+				if (err) {
+					return forbiddenClientHandler(res, 'Failed to authenticate refresh token in GET access token!', err);
+				}
+
+				if (userToken.user_id !== decoded.user_id) {
+					return forbiddenClientHandler(res, 'Error: User ID and refresh token mismatch in GET access token!');
+				}
+
+				const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+				const accessToken = jwt.sign({ user_id: decoded.user_id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+
+				return res.json({
+					message: 'Access token granted successfully!',
+					access_token: accessToken
+				});
+			});
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET access token', err);
 		}
 	);
 });
