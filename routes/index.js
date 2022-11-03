@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { badRequestHandler, serverErrorHandler } = require('../helpers/errorHandlers');
 const User = require('../models').user;
+const UserToken = require('../models').user_token;
 
 /* GET home page. */
 router.get('/', (req, res) => {
@@ -86,17 +87,46 @@ router.get('/login', (req, res) => {
 			bcrypt.compare(userPassword, user.password).then((result) => {
 				if (result) {
 					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
-					const authToken = jwt.sign(user.id, accessTokenPrivateKey, { algorithm: 'RS256' });
+					const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
+					const accessToken = jwt.sign({ user_id: user.id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+					const refreshToken = jwt.sign({ user_id: user.id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
 
-					return res.json({
-						message: 'User logged in successfully!',
-						user,
-						user_exists: true,
-						auth_token: authToken
-					});
+					UserToken.findOne({
+						where: {
+							user_id: user.id
+						}
+					}).then(
+						(userToken) => {
+							if (userToken) {
+								userToken.update({
+									refresh_token: refreshToken
+								});
+							} else {
+								UserToken.create({
+									user_id: user.id,
+									refresh_token: refreshToken
+								});
+							}
+
+							res.cookie('refresh_token', refreshToken, {
+								httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000
+							});
+
+							return res.json({
+								message: 'User logged in successfully!',
+								user,
+								user_exists: true,
+								access_token: accessToken,
+								refresh_token: refreshToken
+							});
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err);
+						}
+					);
+				} else {
+					return badRequestHandler(res, 'Invalid credentials', { user_exists: true });
 				}
-
-				return badRequestHandler(res, 'Invalid credentials', { user_exists: true });
 			}).catch((err) => {
 				return serverErrorHandler(res, 'Error: Failed to verify password in login', err, { user_exists: true });
 			});
