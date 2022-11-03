@@ -7,7 +7,9 @@
     "dialect": "mysql",
     "superSecret": "[project-name]2021",
     "accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\npublic-key\n-----END PUBLIC KEY-----",
-    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----"
+    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----",
+		"refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----"
   },
   "test": {
     "username": "admin",
@@ -17,7 +19,9 @@
     "dialect": "mysql",
     "superSecret": "[project-name]2021",
 		"accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\npublic-key\n-----END PUBLIC KEY-----",
-    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----"
+    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----",
+		"refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----"
   },
   "production": {
    "username": "admin",
@@ -27,6 +31,8 @@
     "dialect": "mysql",
     "superSecret": "[project-name]2021",
 		"accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\npublic-key\n-----END PUBLIC KEY-----",
-    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----"
+    "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nprivate-key\n-----END RSA PRIVATE KEY-----",
+		"refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----"
   }
 }
