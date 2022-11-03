@@ -178,4 +178,45 @@ router.get('/access_token', (req, res) => {
 	);
 });
 
+/* GET logout. */
+router.get('/logout', (req, res) => {
+	const refreshToken = req.cookies.refresh_token;
+
+	if (!refreshToken) {
+		return badRequestHandler(res, 'Error: Refresh token cookie not found');
+	}
+
+	UserToken.findOne({
+		where: { refresh_token: refreshToken }
+	}).then(
+		(userToken) => {
+			if (!userToken) {
+				res.clearCookie('refresh_token', {
+					httpOnly: true, sameSite: 'None', secure: true
+				});
+			}
+
+			UserToken.destroy({
+				where: { refresh_token: refreshToken }
+			}).then(
+				() => {
+					res.clearCookie('refresh_token', {
+						httpOnly: true, sameSite: 'None', secure: true
+					});
+
+					return res.json({
+						message: 'User logged out successfully!',
+					});
+				},
+				(err) => {
+					return serverErrorHandler(res, 'Error: Failed to delete user token in GET logout', err);
+				}
+			);
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET logout', err);
+		}
+	);
+});
+
 module.exports = router;
