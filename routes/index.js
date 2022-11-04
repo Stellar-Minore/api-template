@@ -145,32 +145,82 @@ router.get('/access_token', (req, res) => {
 		return badRequestHandler(res, 'Error: Refresh token cookie not found');
 	}
 
+	res.clearCookie('refresh_token', {
+		httpOnly: true, sameSite: 'None', secure: true
+	});
+
+	const refreshTokenPublicKey = config.refreshTokenPublicKey.replace(/\\n/g, '\n');
+
 	UserToken.findOne({
 		where: { refresh_token: refreshToken }
 	}).then(
 		(userToken) => {
 			if (!userToken) {
-				return badRequestHandler(res, 'Error: User token does not exist in GET access token!');
-			}
-			const refreshTokenPublicKey = config.refreshTokenPublicKey.replace(/\\n/g, '\n');
+				jwt.verify(refreshToken, refreshTokenPublicKey, { algorithm: 'RS256' }, async (err, decoded) => {
+					if (err) {
+						return forbiddenClientHandler(res, 'Failed to authenticate refresh token in GET access token!', err);
+					}
 
-			jwt.verify(refreshToken, refreshTokenPublicKey, { algorithm: 'RS256' }, async (err, decoded) => {
-				if (err) {
-					return forbiddenClientHandler(res, 'Failed to authenticate refresh token in GET access token!', err);
-				}
-
-				if (userToken.user_id !== decoded.user_id) {
-					return forbiddenClientHandler(res, 'Error: User ID and refresh token mismatch in GET access token!');
-				}
-
-				const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
-				const accessToken = jwt.sign({ user_id: decoded.user_id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
-
-				return res.json({
-					message: 'Access token granted successfully!',
-					access_token: accessToken
+					UserToken.destroy({
+						where: { id: decoded.user_id }
+					}).then(
+						() => {
+							return forbiddenClientHandler(res, 'This user does not have permission to get access token', err);
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err);
+						}
+					);
 				});
-			});
+			} else {
+				jwt.verify(refreshToken, refreshTokenPublicKey, { algorithm: 'RS256' }, async (err, decoded) => {
+					if (err) {
+						await UserToken.destroy({
+							where: { refresh_token: refreshToken }
+						});
+
+						return forbiddenClientHandler(res, 'Failed to authenticate refresh token in GET access token!', err);
+					}
+
+					if (userToken.user_id !== decoded.user_id) {
+						return forbiddenClientHandler(res, 'Error: User ID and refresh token mismatch in GET access token!');
+					}
+
+					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+					const accessToken = jwt.sign({ user_id: decoded.user_id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+					const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
+					const newRefreshToken = jwt.sign({ user_id: decoded.user_id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
+
+					UserToken.destroy({
+						where: { refresh_token: refreshToken }
+					}).then(
+						() => {
+							UserToken.create({
+								user_id: decoded.user_id,
+								refresh_token: newRefreshToken
+							}).then(
+								() => {
+									res.cookie('refresh_token', newRefreshToken, {
+										httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000
+									});
+
+									return res.json({
+										message: 'Access and refresh token granted successfully!',
+										access_token: accessToken,
+										refresh_token: newRefreshToken
+									});
+								},
+								(err) => {
+									return serverErrorHandler(res, 'Error: Failed to create user token in GET access token', err);
+								}
+							);
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err);
+						}
+					);
+				});
+			}
 		},
 		(err) => {
 			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET access token', err);
