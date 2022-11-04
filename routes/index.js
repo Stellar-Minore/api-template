@@ -77,6 +77,7 @@ router.get('/login', (req, res) => {
 
 	const userEmail = req.headers.email;
 	const userPassword = req.headers.pw;
+	const refreshToken = req.cookies.refresh_token;
 
 	User.findOne({ where: { email: userEmail.toLowerCase() } }).then(
 		(user) => {
@@ -84,31 +85,44 @@ router.get('/login', (req, res) => {
 				return badRequestHandler(res, 'Error: User does not exist', { user_exists: false });
 			}
 
-			bcrypt.compare(userPassword, user.password).then((result) => {
+			bcrypt.compare(userPassword, user.password).then(async (result) => {
 				if (result) {
+					if (refreshToken) {
+						await UserToken.findOne({
+							where: { refresh_token: refreshToken }
+						}).then(
+							async (userToken) => {
+								if (!userToken) {
+									await UserToken.destroy({
+										where: { user_id: user.id }
+									});
+								} else {
+									await UserToken.destroy({
+										where: { refresh_token: refreshToken }
+									});
+								}
+
+								res.clearCookie('refresh_token', {
+									httpOnly: true, sameSite: 'None', secure: true
+								});
+							},
+							(err) => {
+								return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err);
+							}
+						);
+					}
+
 					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
 					const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
 					const accessToken = jwt.sign({ user_id: user.id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
-					const refreshToken = jwt.sign({ user_id: user.id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
+					const newRefreshToken = jwt.sign({ user_id: user.id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
 
-					UserToken.findOne({
-						where: {
-							user_id: user.id
-						}
+					UserToken.create({
+						user_id: user.id,
+						refresh_token: newRefreshToken
 					}).then(
-						(userToken) => {
-							if (userToken) {
-								userToken.update({
-									refresh_token: refreshToken
-								});
-							} else {
-								UserToken.create({
-									user_id: user.id,
-									refresh_token: refreshToken
-								});
-							}
-
-							res.cookie('refresh_token', refreshToken, {
+						() => {
+							res.cookie('refresh_token', newRefreshToken, {
 								httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000
 							});
 
@@ -117,11 +131,11 @@ router.get('/login', (req, res) => {
 								user,
 								user_exists: true,
 								access_token: accessToken,
-								refresh_token: refreshToken
+								refresh_token: newRefreshToken
 							});
 						},
 						(err) => {
-							return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err);
+							return serverErrorHandler(res, 'Error: Failed to create user token in login', err);
 						}
 					);
 				} else {
