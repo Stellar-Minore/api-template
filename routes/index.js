@@ -247,18 +247,14 @@ router.get('/logout', (req, res) => {
 	}).then(
 		(userToken) => {
 			if (!userToken) {
-				res.clearCookie('refresh_token', {
-					httpOnly: true, sameSite: 'None', secure: true
-				});
+				res.clearCookie('refresh_token');
 			}
 
 			UserToken.destroy({
 				where: { refresh_token: refreshToken }
 			}).then(
 				() => {
-					res.clearCookie('refresh_token', {
-						httpOnly: true, sameSite: 'None', secure: true
-					});
+					res.clearCookie('refresh_token');
 
 					return res.json({
 						message: 'User logged out successfully!',
