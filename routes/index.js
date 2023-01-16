@@ -155,9 +155,7 @@ router.get('/access_token', (req, res) => {
 		return badRequestHandler(res, 'Error: Refresh token cookie not found');
 	}
 
-	res.clearCookie('refresh_token', {
-		httpOnly: true, sameSite: 'None', secure: true
-	});
+	res.clearCookie('refresh_token');
 
 	const refreshTokenPublicKey = config.refreshTokenPublicKey.replace(/\\n/g, '\n');
 
@@ -210,9 +208,7 @@ router.get('/access_token', (req, res) => {
 								refresh_token: newRefreshToken
 							}).then(
 								() => {
-									res.cookie('refresh_token', newRefreshToken, {
-										httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000
-									});
+									res.cookie('refresh_token', newRefreshToken, req.app.get('cookieOptions'));
 
 									return res.json({
 										message: 'Access and refresh token granted successfully!',
