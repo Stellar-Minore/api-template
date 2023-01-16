@@ -102,9 +102,7 @@ router.get('/login', (req, res) => {
 									});
 								}
 
-								res.clearCookie('refresh_token', {
-									httpOnly: true, sameSite: 'None', secure: true
-								});
+								res.clearCookie('refresh_token');
 							},
 							(err) => {
 								return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err);
@@ -122,9 +120,7 @@ router.get('/login', (req, res) => {
 						refresh_token: newRefreshToken
 					}).then(
 						() => {
-							res.cookie('refresh_token', newRefreshToken, {
-								httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000
-							});
+							res.cookie('refresh_token', newRefreshToken, req.app.get('cookieOptions'));
 
 							return res.json({
 								message: 'User logged in successfully!',
