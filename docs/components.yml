@@ -1,0 +1,25 @@
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+      required:
+        - email
+      example:
+        id: 'f9dcf8c2-a4a6-4a4d-87f4-a4c4f9dcf8c2'
+        email: 'example@email.com'
+        password: 'password'
+        first_name: 'John'
+        last_name: 'Doe'
