@@ -9,6 +9,7 @@ const config = require(`${__dirname}/./config/config.json`)[env];
 const cors = require('cors');
 
 const indexRouter = require('./routes/index');
+const docsRouter = require('./routes/docs');
 const usersRouter = require('./routes/users');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 
 app.use('/', indexRouter);
+app.use('/docs', docsRouter);
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
