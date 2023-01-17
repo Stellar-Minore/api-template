@@ -23,7 +23,26 @@ components:
         password: 'password'
         first_name: 'John'
         last_name: 'Doe'
-        
+
+    UserToken:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+        refresh_token:
+          type: string
+      required:
+        - user_id:
+        - refresh_token:
+      example:
+        id: '1'
+        user_id: 'd0c53d6d-81ec-4360-a82a-98314480cc61'
+        refresh_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
+
   securitySchemes:
     bearerAuth:
       type: http
