@@ -96,4 +96,15 @@ router.get('/',
  *                  refresh_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
  */
 
+/**
+ * @swagger
+ * /logout:
+ *   get:
+ *     summary: Logout
+ *     tags: [Index]
+ *     responses:
+ *       "200":
+ *         description: Success
+ */
+
 module.exports = router;
