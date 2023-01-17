@@ -1,10 +1,15 @@
 const express = require('express');
 
+const env = process.env.NODE_ENV || 'development';
+const path = require('path');
+
+const config = require(path.join(__dirname, '/../config/config.json'))[env];
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { badRequestHandler, serverErrorHandler } = require('../helpers/errorHandlers');
+const { badRequestHandler, serverErrorHandler, forbiddenClientHandler } = require('../helpers/errorHandlers');
 const User = require('../models').user;
+const UserToken = require('../models').user_token;
 
 /* GET home page. */
 router.get('/', (req, res) => {
@@ -32,13 +37,17 @@ router.post('/signup', (req, res, next) => {
 
 						User.create({ email: userEmail, password: hash }).then(
 							(new_user) => {
-								const auth_token = jwt.sign(new_user.id, req.app.get('superSecret'));
+								const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+								const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
+								const accessToken = jwt.sign({ user_id: new_user.id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+								const newRefreshToken = jwt.sign({ user_id: new_user.id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
 
 								return res.json({
 									message: 'User Created!',
 									user: new_user,
-									auth_token,
-									user_exists: false
+									user_exists: false,
+									access_token: accessToken,
+									refresh_token: newRefreshToken
 								});
 							},
 							(err) => {
@@ -68,6 +77,7 @@ router.get('/login', (req, res) => {
 
 	const userEmail = req.headers.email;
 	const userPassword = req.headers.pw;
+	const refreshToken = req.cookies.refresh_token;
 
 	User.findOne({ where: { email: userEmail.toLowerCase() } }).then(
 		(user) => {
@@ -75,25 +85,188 @@ router.get('/login', (req, res) => {
 				return badRequestHandler(res, 'Error: User does not exist', { user_exists: false });
 			}
 
-			bcrypt.compare(userPassword, user.password).then((result) => {
+			bcrypt.compare(userPassword, user.password).then(async (result) => {
 				if (result) {
-					const authToken = jwt.sign(user.id, req.app.get('superSecret'));
+					if (refreshToken) {
+						await UserToken.findOne({
+							where: { refresh_token: refreshToken }
+						}).then(
+							async (userToken) => {
+								if (!userToken) {
+									await UserToken.destroy({
+										where: { user_id: user.id }
+									});
+								} else {
+									await UserToken.destroy({
+										where: { refresh_token: refreshToken }
+									});
+								}
 
-					return res.json({
-						message: 'User logged in successfully!',
-						user,
-						user_exists: true,
-						auth_token: authToken
-					});
+								res.clearCookie('refresh_token');
+							},
+							(err) => {
+								return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err);
+							}
+						);
+					}
+
+					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+					const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
+					const accessToken = jwt.sign({ user_id: user.id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+					const newRefreshToken = jwt.sign({ user_id: user.id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
+
+					UserToken.create({
+						user_id: user.id,
+						refresh_token: newRefreshToken
+					}).then(
+						() => {
+							res.cookie('refresh_token', newRefreshToken, req.app.get('cookieOptions'));
+
+							return res.json({
+								message: 'User logged in successfully!',
+								user,
+								user_exists: true,
+								access_token: accessToken,
+								refresh_token: newRefreshToken
+							});
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to create user token in login', err);
+						}
+					);
+				} else {
+					return badRequestHandler(res, 'Invalid credentials', { user_exists: true });
 				}
-
-				return badRequestHandler(res, 'Invalid credentials', { user_exists: true });
 			}).catch((err) => {
 				return serverErrorHandler(res, 'Error: Failed to verify password in login', err, { user_exists: true });
 			});
 		},
 		(err) => {
 			return serverErrorHandler(res, 'Error: Failed to fetch user profile in login', err);
+		}
+	);
+});
+
+/* GET access token. */
+router.get('/access_token', (req, res) => {
+	const refreshToken = req.cookies.refresh_token;
+
+	if (!refreshToken) {
+		return badRequestHandler(res, 'Error: Refresh token cookie not found');
+	}
+
+	res.clearCookie('refresh_token');
+
+	const refreshTokenPublicKey = config.refreshTokenPublicKey.replace(/\\n/g, '\n');
+
+	UserToken.findOne({
+		where: { refresh_token: refreshToken }
+	}).then(
+		(userToken) => {
+			if (!userToken) {
+				jwt.verify(refreshToken, refreshTokenPublicKey, { algorithm: 'RS256' }, async (err, decoded) => {
+					if (err) {
+						return forbiddenClientHandler(res, 'Failed to authenticate refresh token in GET access token!', err);
+					}
+
+					UserToken.destroy({
+						where: { id: decoded.user_id }
+					}).then(
+						() => {
+							return forbiddenClientHandler(res, 'This user does not have permission to get access token', err);
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err);
+						}
+					);
+				});
+			} else {
+				jwt.verify(refreshToken, refreshTokenPublicKey, { algorithm: 'RS256' }, async (err, decoded) => {
+					if (err) {
+						await UserToken.destroy({
+							where: { refresh_token: refreshToken }
+						});
+
+						return forbiddenClientHandler(res, 'Failed to authenticate refresh token in GET access token!', err);
+					}
+
+					if (userToken.user_id !== decoded.user_id) {
+						return forbiddenClientHandler(res, 'Error: User ID and refresh token mismatch in GET access token!');
+					}
+
+					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
+					const accessToken = jwt.sign({ user_id: decoded.user_id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
+					const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
+					const newRefreshToken = jwt.sign({ user_id: decoded.user_id }, refreshTokenPrivateKey, { expiresIn: '1d', algorithm: 'RS256' });
+
+					UserToken.destroy({
+						where: { refresh_token: refreshToken }
+					}).then(
+						() => {
+							UserToken.create({
+								user_id: decoded.user_id,
+								refresh_token: newRefreshToken
+							}).then(
+								() => {
+									res.cookie('refresh_token', newRefreshToken, req.app.get('cookieOptions'));
+
+									return res.json({
+										message: 'Access and refresh token granted successfully!',
+										access_token: accessToken,
+										refresh_token: newRefreshToken
+									});
+								},
+								(err) => {
+									return serverErrorHandler(res, 'Error: Failed to create user token in GET access token', err);
+								}
+							);
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err);
+						}
+					);
+				});
+			}
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET access token', err);
+		}
+	);
+});
+
+/* GET logout. */
+router.get('/logout', (req, res) => {
+	const refreshToken = req.cookies.refresh_token;
+
+	if (!refreshToken) {
+		return badRequestHandler(res, 'Error: Refresh token cookie not found');
+	}
+
+	UserToken.findOne({
+		where: { refresh_token: refreshToken }
+	}).then(
+		(userToken) => {
+			if (!userToken) {
+				res.clearCookie('refresh_token');
+			}
+
+			UserToken.destroy({
+				where: { refresh_token: refreshToken }
+			}).then(
+				() => {
+					res.clearCookie('refresh_token');
+
+					return res.json({
+						message: 'User logged out successfully!',
+					});
+				},
+				(err) => {
+					return serverErrorHandler(res, 'Error: Failed to delete user token in GET logout', err);
+				}
+			);
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET logout', err);
 		}
 	);
 });

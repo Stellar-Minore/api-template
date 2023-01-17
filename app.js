@@ -46,4 +46,12 @@ app.use((err, req, res) => {
 	res.render('error');
 });
 
+const cookieOptions = {
+	httpOnly: true,
+	sameSite: 'strict',
+	secure: (process.env.NODE_ENV || env) !== 'development'
+};
+
+app.set('cookieOptions', cookieOptions);
+
 module.exports = app;
