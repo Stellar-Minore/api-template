@@ -23,3 +23,9 @@ components:
         password: 'password'
         first_name: 'John'
         last_name: 'Doe'
+        
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
