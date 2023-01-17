@@ -70,4 +70,30 @@ router.get('/',
  *                $ref: '#/components/schemas/User'
  */
 
+/**
+ * @swagger
+ * /access_token:
+ *   get:
+ *     summary: Get access and refresh token.
+ *     tags: [Index]
+ *     responses:
+ *       "200":
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *                type: object
+ *                properties:
+ *                  message:
+ *                    type: string
+ *                  access_token:
+ *                    type: string
+ *                  refresh_token:
+ *                    type: string
+ *                example:
+ *                  message: 'Access and refresh token granted successfully!'
+ *                  access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
+ *                  refresh_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
+ */
+
 module.exports = router;
