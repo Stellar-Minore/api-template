@@ -105,7 +105,7 @@ router.get('/login', (req, res) => {
 								res.clearCookie('refresh_token');
 							},
 							(err) => {
-								return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err);
+								return serverErrorHandler(res, 'Error: Failed to fetch user token in login', err, { user_token_fetch_failed: true });
 							}
 						);
 					}
@@ -131,7 +131,7 @@ router.get('/login', (req, res) => {
 							});
 						},
 						(err) => {
-							return serverErrorHandler(res, 'Error: Failed to create user token in login', err);
+							return serverErrorHandler(res, 'Error: Failed to create user token in login', err, { user_token_create_failed: true });
 						}
 					);
 				} else {
@@ -142,7 +142,7 @@ router.get('/login', (req, res) => {
 			});
 		},
 		(err) => {
-			return serverErrorHandler(res, 'Error: Failed to fetch user profile in login', err);
+			return serverErrorHandler(res, 'Error: Failed to fetch user profile in login', err, { user_fetch_failed: true });
 		}
 	);
 });
