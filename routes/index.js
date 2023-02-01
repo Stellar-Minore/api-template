@@ -176,7 +176,7 @@ router.get('/access_token', (req, res) => {
 							return forbiddenClientHandler(res, 'This user does not have permission to get access token', err);
 						},
 						(err) => {
-							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err);
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err, {user_token_delete_failed: true});
 						}
 					);
 				});
@@ -217,19 +217,19 @@ router.get('/access_token', (req, res) => {
 									});
 								},
 								(err) => {
-									return serverErrorHandler(res, 'Error: Failed to create user token in GET access token', err);
+									return serverErrorHandler(res, 'Error: Failed to create user token in GET access token', err, { user_token_create_failed: true });
 								}
 							);
 						},
 						(err) => {
-							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err);
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err, { user_token_delete_failed: true });
 						}
 					);
 				});
 			}
 		},
 		(err) => {
-			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET access token', err);
+			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET access token', err, { user_token_fetch_failed: true });
 		}
 	);
 });
