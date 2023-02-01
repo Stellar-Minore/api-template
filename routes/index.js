@@ -170,13 +170,13 @@ router.get('/access_token', (req, res) => {
 					}
 
 					UserToken.destroy({
-						where: { id: decoded.user_id }
+						where: { user_id: decoded.user_id }
 					}).then(
 						() => {
 							return forbiddenClientHandler(res, 'This user does not have permission to get access token', err);
 						},
 						(err) => {
-							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err, {user_token_delete_failed: true});
+							return serverErrorHandler(res, 'Error: Failed to delete user token in GET access token', err, { user_token_delete_failed: true });
 						}
 					);
 				});
