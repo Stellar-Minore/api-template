@@ -245,28 +245,28 @@ router.get('/logout', (req, res) => {
 	UserToken.findOne({
 		where: { refresh_token: refreshToken }
 	}).then(
-		(userToken) => {
+		async (userToken) => {
 			if (!userToken) {
 				res.clearCookie('refresh_token');
+			} else {
+				await UserToken.destroy({
+					where: { refresh_token: refreshToken }
+				}).then(
+					() => {
+						res.clearCookie('refresh_token');
+					},
+					(err) => {
+						return serverErrorHandler(res, 'Error: Failed to delete user token in GET logout', err, { user_token_delete_failed: true });
+					}
+				);
 			}
 
-			UserToken.destroy({
-				where: { refresh_token: refreshToken }
-			}).then(
-				() => {
-					res.clearCookie('refresh_token');
-
-					return res.json({
-						message: 'User logged out successfully!',
-					});
-				},
-				(err) => {
-					return serverErrorHandler(res, 'Error: Failed to delete user token in GET logout', err);
-				}
-			);
+			return res.json({
+				message: 'User logged out successfully!',
+			});
 		},
 		(err) => {
-			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET logout', err);
+			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET logout', err, { user_token_fetch_failed: true });
 		}
 	);
 });
