@@ -51,7 +51,7 @@ router.post('/signup', (req, res, next) => {
 								});
 							},
 							(err) => {
-								return serverErrorHandler(res, 'Error: Could not create user in sign up', err);
+								return serverErrorHandler(res, 'Error: Could not create user in sign up', err, { user_create_failed: true });
 							}
 						);
 					});
@@ -61,7 +61,7 @@ router.post('/signup', (req, res, next) => {
 			}
 		},
 		(err) => {
-			return serverErrorHandler(res, 'Error: Failed to fetch user profile in sign up', err);
+			return serverErrorHandler(res, 'Error: Failed to fetch user profile in sign up', err, { user_fetch_failed: true });
 		}
 	);
 });
