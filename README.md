@@ -21,13 +21,7 @@ To generate a private key and a public key for use in a Node.js application, fol
 
 3. Use the command `openssl rsa -in private.pem -pubout -out public.pem` to generate a public key from the private key. This command will create a file named "public.pem" in the current directory.
 
-4. To convert the key to a single line, you can use the command `tr -d '\n' < private.pem > private_singleline.pem` for private key and `tr -d '\n' < public.pem > public_singleline.pem` for public key
-
-5. Then, you can remove all white spaces by using `sed 's/ //g' private_singleline.pem` for private key and `sed 's/ //g' public_singleline.pem` for public key
-
-Note: 
-- The above commands are for *nix systems, You can use `type private.pem` and `(get-content private.pem) -join ""` for windows systems
-- Also the key size can be adjusted as per the requirement 
+4. To use these keys in Sequelize, you will need to convert them into a single line and remove all white spaces.
 
 You can then use the private key to sign your JWT and the public key to verify the signature.
 
