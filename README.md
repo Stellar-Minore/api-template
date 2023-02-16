@@ -11,6 +11,17 @@ This project comes with a few things setup by default including
 ### Linter predefined with rules
 ### And more!
 
+## Swagger Documentation
+
+This project also includes a Swagger documentation route for easy API documentation. To access it, follow these steps:
+
+1. Start the server by running npm start in the project's root directory.
+2. Open your browser and navigate to http://localhost:3000/docs.
+3. You will see a Swagger UI page where you can view the API documentation and test the endpoints.
+4. You can also pass a bearer token in the headers of your requests for endpoints that require authorization.
+
+Each API endpoint includes a summary, tags, request body (if applicable), parameters (if applicable), and responses.
+
 ## Generating Private and Public Keys
 
 To generate a private key and a public key for use in a Node.js application, follow these steps:
