@@ -42,6 +42,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '400':
+          description: Bad Request - Invalid or Missing Parameters
+          content:
+            application/json:
+              example:
+                - email_missing: true
+                  message: 'Error: User email is not specified'
+                - password_missing: true
+                  message: 'Error: User email is not specified'
+                - not_found: true
+                  message: 'Error: User does not exist'
+                - user_exists: true
+                  message: 'Error: Invalid credentials'
+        '500':
+          description: Internal Server Error - Unexpected error occurred on the server
+          content:
+            application/json:
+              example:
+                - user_token_fetch_failed: true
+                  message: 'Error: Failed to fetch user token in GET logout'
+                - user_token_create_failed: true
+                  message: 'Error: Failed to create user token in GET logout'
+                - user_exists: true
+                  message: 'Error: Failed to verify password in login'
+                - user_fetch_failed: true
+                  message: 'Error: Failed to fetch user profile in login'
   
   /access_token:
     get:
@@ -96,7 +122,6 @@ paths:
                 - user_token_fetch_failed: true
                   message: 'Error: Failed to fetch user token in GET access token'
       
-
   /logout:
     get:
       summary: Logout
