@@ -66,7 +66,37 @@ paths:
                   message: 'Access and refresh token granted successfully!'
                   access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
                   refresh_token: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
-                   
+        '400':
+          description: Bad Request - Invalid or Missing Parameters
+          content:
+            application/json:
+              example:
+                not_found: true
+                message: 'Error: Refresh token cookie not found'
+        '403':
+          description: Forbidden Request - Unauthorized Access
+          content:
+            application/json:
+              example:
+                success: false
+                anyOf:
+                  - message: 'Error: Failed to authenticate refresh token in GET access token'
+                  - message: 'Error: This user does not have permission to get access token'
+                  - message: 'Error: Failed to authenticate refresh token in GET access token'
+                  - message: 'Error: User ID and refresh token mismatch in GET access token'
+        '500':
+          description: Internal Server Error - Unexpected error occurred on the server
+          content:
+            application/json:
+              example:
+                - user_token_delete_failed: true
+                  message: 'Failed to delete user token in GET access token'
+                - user_token_create_failed: true
+                  message: 'Error: Failed to create user token in GET access token'
+                - user_token_fetch_failed: true
+                  message: 'Error: Failed to fetch user token in GET access token'
+      
+
   /logout:
     get:
       summary: Logout
