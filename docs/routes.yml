@@ -84,3 +84,19 @@ paths:
                     type: string
                 example:
                   message: 'User signed out successfully!'
+        '400':
+          description: Bad Request - Invalid or Missing Parameters
+          content:
+            application/json:
+              example:
+                not_found: true
+                message: 'Error: Refresh token cookie not found'
+        '500':
+          description: Internal Server Error - Unexpected error occurred on the server
+          content:
+            application/json:
+              example:
+                - user_token_delete_failed: true
+                  message: 'Error: Failed to delete user token in GET logout'
+                - user_token_fetch_failed: true
+                  message: 'Error: Failed to fetch user token in GET logout'
