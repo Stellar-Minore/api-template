@@ -17,6 +17,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '400':
+          description: Bad Request - Invalid or Missing Parameters
+          content:
+            application/json:
+              example:
+                - email_missing: true
+                  message: 'Error: User email is not specified'
+                - password_missing: true
+                  message: 'Error: User password is not specified'
+                - user_exists: true
+                  message: 'Error: User already exists in sign up'
+        '500':
+          description: Internal Server Error - Unexpected error occurred on the server
+          content:
+            application/json:
+              example:
+                - user_create_failed: true
+                  message: 'Error: Could not create user in sign up'
+                - user_fetch_failed: true
+                  message: 'Error: Could not fetch user in sign up'
 
   /login:
     get:
