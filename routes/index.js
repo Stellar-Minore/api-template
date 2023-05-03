@@ -7,7 +7,9 @@ const config = require(path.join(__dirname, '/../config/config.json'))[env];
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const sendGridMail = require('@sendgrid/mail');
 const { badRequestHandler, serverErrorHandler, forbiddenClientHandler } = require('../helpers/errorHandlers');
+const ResetPasswordCode = require('../models').reset_password_code;
 const User = require('../models').user;
 const UserToken = require('../models').user_token;
 
@@ -275,6 +277,74 @@ router.get('/logout', (req, res) => {
 		},
 		(err) => {
 			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET logout', err, { user_token_fetch_failed: true });
+		}
+	);
+});
+
+/* GET reset code. */
+router.get('/reset_code', (req, res) => {
+	const userEmail = req.query.email;
+
+	if (!userEmail) {
+		return badRequestHandler(res, 'Error: User email is not specified');
+	}
+
+	User.findOne({
+		where: { email: userEmail },
+		include: { model: ResetPasswordCode }
+	}).then(
+		async (user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User with this email does not exist in GET reset code', { user_does_not_exist: true });
+			}
+
+			const resetCode = Math.floor(Math.random() * 899999 + 100000);
+
+			if (user.reset_password_code) {
+				await user.reset_password_code.update({
+					code: resetCode,
+					used: false
+				}).catch(
+					(err) => {
+						return serverErrorHandler(res, 'Error: Failed to update reset password code in GET reset code', err, { update_reset_password_code_failed: true });
+					}
+				);
+			} else {
+				await ResetPasswordCode.create({
+					code: resetCode,
+					user_id: user.id
+				}).catch(
+					(err) => {
+						return serverErrorHandler(res, 'Error: Failed to create reset password code in GET reset code', err, { create_reset_password_code_failed: true });
+					}
+				);
+			}
+
+			sendGridMail.setApiKey(process.env.sendGridApiKey || config.sendGridApiKey);
+
+			const templateID = '[send-grid-template-id]';
+			const emailMessage = {
+				to: [{ name: user.first_name || 'User', email: user.email }],
+				from: { name: 'Team [company-name]', email: '[company-email]' },
+				replyTo: { name: 'Team [company-name]', email: '[company-email]' },
+				subject: 'Password Reset Requested',
+				template_id: templateID,
+				dynamic_template_data: { reset_code: resetCode }
+			};
+
+			sendGridMail.send(emailMessage).then(
+				() => {
+					return res.json({
+						message: `Reset code successfully sent to ${user.email}!`
+					});
+				},
+				(err) => {
+					return serverErrorHandler(res, `Error: Failed to send reset password email to ${user.email} in GET reset code`, err, { send_email_failed: true });
+				}
+			);
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user details in GET reset code', err, { user_fetch_failed: true });
 		}
 	);
 });
