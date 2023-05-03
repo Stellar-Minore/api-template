@@ -8,8 +8,9 @@
     "superSecret": "[project-name]2021",
     "accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
     "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----",
-		"refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
-    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----"
+    "refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----",
+    "sendGridApiKey": "[send-grid-api-key]"
   },
   "test": {
     "username": "admin",
@@ -18,10 +19,11 @@
     "host": "127.0.0.1",
     "dialect": "mysql",
     "superSecret": "[project-name]2021",
-		"accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
     "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----",
-		"refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
-    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----"
+    "refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----",
+    "sendGridApiKey": "[send-grid-api-key]"
   },
   "production": {
    "username": "admin",
@@ -30,9 +32,10 @@
     "host": "127.0.0.1",
     "dialect": "mysql",
     "superSecret": "[project-name]2021",
-		"accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "accessTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
     "accessTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----",
-		"refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
-    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----"
+    "refreshTokenPublicKey": "-----BEGIN PUBLIC KEY-----\n[public-key]\n-----END PUBLIC KEY-----",
+    "refreshTokenPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\n[private-key]\n-----END RSA PRIVATE KEY-----",
+    "sendGridApiKey": "[send-grid-api-key]"
   }
 }
