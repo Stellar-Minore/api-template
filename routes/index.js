@@ -13,6 +13,10 @@ const ResetPasswordCode = require('../models').reset_password_code;
 const User = require('../models').user;
 const UserToken = require('../models').user_token;
 
+const isResetCodeExpired = (resetCodeDate) => {
+	return ((new Date() - resetCodeDate) / (1000 * 60 * 60)) > 3;
+};
+
 /* GET home page. */
 router.get('/', (req, res) => {
 	res.render('index', { title: 'Express' });
@@ -345,6 +349,54 @@ router.get('/reset_code', (req, res) => {
 		},
 		(err) => {
 			return serverErrorHandler(res, 'Error: Failed to fetch user details in GET reset code', err, { user_fetch_failed: true });
+		}
+	);
+});
+
+/* POST verify reset code. */
+router.post('/verify_reset_code', (req, res) => {
+	const userEmail = req.body.email;
+	const resetCode = req.body.reset_code;
+
+	if (!userEmail) {
+		return badRequestHandler(res, 'Error: User email is not specified');
+	}
+
+	if (!resetCode) {
+		return badRequestHandler(res, 'Error: Reset code is not specified');
+	}
+
+	User.findOne({
+		where: { email: userEmail },
+		include: {
+			model: ResetPasswordCode,
+			where: { code: resetCode },
+			required: false
+		}
+	}).then(
+		async (user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User with this email does not exist in POST verify reset code', { user_does_not_exist: true });
+			}
+
+			if (!user.reset_password_code) {
+				return badRequestHandler(res, 'Error: Invalid reset code in POST verify reset code', { invalid_reset_code: true });
+			}
+
+			if (user.reset_password_code.used === true) {
+				return badRequestHandler(res, 'Error: Reset code is already used in POST verify reset code', { reset_code_used: true });
+			}
+
+			if (isResetCodeExpired(user.reset_password_code.updated_at)) {
+				return badRequestHandler(res, 'Error: Reset code has expired in POST verify reset code', { reset_code_expired: true });
+			}
+
+			return res.json({
+				message: 'Reset code is verified successfully!'
+			});
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user details in POST verify reset code', err, { user_fetch_failed: true });
 		}
 	);
 });
