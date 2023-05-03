@@ -401,4 +401,66 @@ router.post('/verify_reset_code', (req, res) => {
 	);
 });
 
+/* POST reset password. */
+router.post('/reset_password', (req, res) => {
+	const userEmail = req.body.email;
+	const userPassword = req.body.password;
+
+	if (!userEmail) {
+		return badRequestHandler(res, 'Error: User email is not specified');
+	}
+
+	if (!userPassword) {
+		return badRequestHandler(res, 'Error: User password is not specified');
+	}
+
+	User.findOne({
+		where: { email: userEmail },
+		include: {
+			model: ResetPasswordCode,
+			where: { used: false },
+			required: false
+		}
+	}).then(
+		async (user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User with this email does not exist in POST reset password', { user_does_not_exist: true });
+			}
+
+			if (!user.reset_password_code) {
+				return forbiddenClientHandler(res, 'Error: User has not requested the reset code in POST reset password');
+			}
+
+			if (isResetCodeExpired(user.reset_password_code.updated_at)) {
+				return badRequestHandler(res, 'Error: Reset code has expired in POST reset password', { reset_code_expired: true });
+			}
+
+			const hashPassword = await bcrypt.hash(userPassword, bcrypt.genSaltSync(10));
+
+			user.update({
+				password: hashPassword
+			}).then(
+				() => {
+					user.reset_password_code.update({ used: true }).then(
+						() => {
+							return res.json({
+								message: 'Password updated successfully!'
+							});
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to update reset code in POST reset password', err, { update_reset_code_failed: true });
+						}
+					);
+				},
+				(err) => {
+					return serverErrorHandler(res, 'Error: Failed to reset password in POST reset password', err, { reset_pasword_failed: true });
+				}
+			);
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user details in POST reset password', err, { user_fetch_failed: true });
+		}
+	);
+});
+
 module.exports = router;
