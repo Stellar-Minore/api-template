@@ -7,9 +7,15 @@ const config = require(path.join(__dirname, '/../config/config.json'))[env];
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const sendGridMail = require('@sendgrid/mail');
 const { badRequestHandler, serverErrorHandler, forbiddenClientHandler } = require('../helpers/errorHandlers');
+const ResetPasswordCode = require('../models').reset_password_code;
 const User = require('../models').user;
 const UserToken = require('../models').user_token;
+
+const isResetCodeExpired = (resetCodeDate) => {
+	return ((new Date() - resetCodeDate) / (1000 * 60 * 60)) > 3;
+};
 
 /* GET home page. */
 router.get('/', (req, res) => {
@@ -275,6 +281,184 @@ router.get('/logout', (req, res) => {
 		},
 		(err) => {
 			return serverErrorHandler(res, 'Error: Failed to fetch user token in GET logout', err, { user_token_fetch_failed: true });
+		}
+	);
+});
+
+/* GET reset code. */
+router.get('/reset_code', (req, res) => {
+	const userEmail = req.query.email;
+
+	if (!userEmail) {
+		return badRequestHandler(res, 'Error: User email is not specified');
+	}
+
+	User.findOne({
+		where: { email: userEmail },
+		include: { model: ResetPasswordCode }
+	}).then(
+		async (user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User with this email does not exist in GET reset code', { user_does_not_exist: true });
+			}
+
+			const resetCode = Math.floor(Math.random() * 899999 + 100000);
+
+			if (user.reset_password_code) {
+				await user.reset_password_code.update({
+					code: resetCode,
+					used: false
+				}).catch(
+					(err) => {
+						return serverErrorHandler(res, 'Error: Failed to update reset password code in GET reset code', err, { update_reset_password_code_failed: true });
+					}
+				);
+			} else {
+				await ResetPasswordCode.create({
+					code: resetCode,
+					user_id: user.id
+				}).catch(
+					(err) => {
+						return serverErrorHandler(res, 'Error: Failed to create reset password code in GET reset code', err, { create_reset_password_code_failed: true });
+					}
+				);
+			}
+
+			sendGridMail.setApiKey(process.env.sendGridApiKey || config.sendGridApiKey);
+
+			const templateID = '[send-grid-template-id]';
+			const emailMessage = {
+				to: [{ name: user.first_name || 'User', email: user.email }],
+				from: { name: 'Team [company-name]', email: '[company-email]' },
+				replyTo: { name: 'Team [company-name]', email: '[company-email]' },
+				subject: 'Password Reset Requested',
+				template_id: templateID,
+				dynamic_template_data: { reset_code: resetCode }
+			};
+
+			sendGridMail.send(emailMessage).then(
+				() => {
+					return res.json({
+						message: `Reset code successfully sent to ${user.email}!`
+					});
+				},
+				(err) => {
+					return serverErrorHandler(res, `Error: Failed to send reset password email to ${user.email} in GET reset code`, err, { send_email_failed: true });
+				}
+			);
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user details in GET reset code', err, { user_fetch_failed: true });
+		}
+	);
+});
+
+/* POST verify reset code. */
+router.post('/verify_reset_code', (req, res) => {
+	const userEmail = req.body.email;
+	const resetCode = req.body.reset_code;
+
+	if (!userEmail) {
+		return badRequestHandler(res, 'Error: User email is not specified');
+	}
+
+	if (!resetCode) {
+		return badRequestHandler(res, 'Error: Reset code is not specified');
+	}
+
+	User.findOne({
+		where: { email: userEmail },
+		include: {
+			model: ResetPasswordCode,
+			where: { code: resetCode },
+			required: false
+		}
+	}).then(
+		async (user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User with this email does not exist in POST verify reset code', { user_does_not_exist: true });
+			}
+
+			if (!user.reset_password_code) {
+				return badRequestHandler(res, 'Error: Invalid reset code in POST verify reset code', { invalid_reset_code: true });
+			}
+
+			if (user.reset_password_code.used === true) {
+				return badRequestHandler(res, 'Error: Reset code is already used in POST verify reset code', { reset_code_used: true });
+			}
+
+			if (isResetCodeExpired(user.reset_password_code.updated_at)) {
+				return badRequestHandler(res, 'Error: Reset code has expired in POST verify reset code', { reset_code_expired: true });
+			}
+
+			return res.json({
+				message: 'Reset code is verified successfully!'
+			});
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user details in POST verify reset code', err, { user_fetch_failed: true });
+		}
+	);
+});
+
+/* POST reset password. */
+router.post('/reset_password', (req, res) => {
+	const userEmail = req.body.email;
+	const userPassword = req.body.password;
+
+	if (!userEmail) {
+		return badRequestHandler(res, 'Error: User email is not specified');
+	}
+
+	if (!userPassword) {
+		return badRequestHandler(res, 'Error: User password is not specified');
+	}
+
+	User.findOne({
+		where: { email: userEmail },
+		include: {
+			model: ResetPasswordCode,
+			where: { used: false },
+			required: false
+		}
+	}).then(
+		async (user) => {
+			if (!user) {
+				return badRequestHandler(res, 'Error: User with this email does not exist in POST reset password', { user_does_not_exist: true });
+			}
+
+			if (!user.reset_password_code) {
+				return forbiddenClientHandler(res, 'Error: User has not requested the reset code in POST reset password');
+			}
+
+			if (isResetCodeExpired(user.reset_password_code.updated_at)) {
+				return badRequestHandler(res, 'Error: Reset code has expired in POST reset password', { reset_code_expired: true });
+			}
+
+			const hashPassword = await bcrypt.hash(userPassword, bcrypt.genSaltSync(10));
+
+			user.update({
+				password: hashPassword
+			}).then(
+				() => {
+					user.reset_password_code.update({ used: true }).then(
+						() => {
+							return res.json({
+								message: 'Password updated successfully!'
+							});
+						},
+						(err) => {
+							return serverErrorHandler(res, 'Error: Failed to update reset code in POST reset password', err, { update_reset_code_failed: true });
+						}
+					);
+				},
+				(err) => {
+					return serverErrorHandler(res, 'Error: Failed to reset password in POST reset password', err, { reset_pasword_failed: true });
+				}
+			);
+		},
+		(err) => {
+			return serverErrorHandler(res, 'Error: Failed to fetch user details in POST reset password', err, { user_fetch_failed: true });
 		}
 	);
 });
