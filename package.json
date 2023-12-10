@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www",
+    "start": "npm run swagger-autogen && node ./bin/www",
+    "swagger-autogen": "node ./helpers/swagger.js",
     "lint": "eslint .",
     "fix-lint": "eslint . --fix"
   },
