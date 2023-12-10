@@ -7,6 +7,7 @@ const User = require('../models').user;
 const { serverErrorHandler, forbiddenClientHandler } = require('./errorHandlers');
 
 exports.accountAuthenticator = async (req, res, next) => {
+	/* #swagger.autoBody = false */
 	const userID = req.body.userID || req.body.user_id || req.header('user_id') || req.params.user_id;
 
 	if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
