@@ -33,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
 		last_name: {
 			type: DataTypes.STRING,
 			allowNull: true
+		},
+		deletion_interval_in_days: {
+			type: DataTypes.INTEGER,
+			allowNull: true
 		}
 	}, {
 		sequelize,
