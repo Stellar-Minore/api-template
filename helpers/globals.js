@@ -38,3 +38,10 @@ exports.deleteExpiredAccounts = () => {
 		}
 	);
 };
+
+exports.recoverUserAccount = (userID) => {
+	return Promise.all([
+		ResetPasswordCode.restore({ where: { user_id: userID } }),
+		User.restore({ where: { id: userID } })
+	]);
+};
