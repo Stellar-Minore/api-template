@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const schedule = require('node-schedule');
 
 const env = process.env.NODE_ENV || 'development';
 const config = require(`${__dirname}/./config/config.json`)[env];
@@ -10,6 +11,7 @@ const cors = require('cors');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const { deleteExpiredAccounts } = require('./helpers/globals');
 
 const app = express();
 
@@ -53,5 +55,11 @@ const cookieOptions = {
 };
 
 app.set('cookieOptions', cookieOptions);
+
+app.listen(() => {
+	schedule.scheduleJob('0 0 * * *', () => {
+		deleteExpiredAccounts();
+	});
+});
 
 module.exports = app;

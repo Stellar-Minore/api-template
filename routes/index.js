@@ -8,10 +8,11 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const sendGridMail = require('@sendgrid/mail');
-const { badRequestHandler, serverErrorHandler, forbiddenClientHandler } = require('../helpers/errorHandlers');
 const ResetPasswordCode = require('../models').reset_password_code;
 const User = require('../models').user;
 const UserToken = require('../models').user_token;
+const { badRequestHandler, serverErrorHandler, forbiddenClientHandler } = require('../helpers/errorHandlers');
+const { recoverUserAccount } = require('../helpers/globals');
 
 const isResetCodeExpired = (resetCodeDate) => {
 	return ((new Date() - resetCodeDate) / (1000 * 60 * 60)) > 3;
@@ -93,7 +94,7 @@ router.get('/login', (req, res) => {
 	const userPassword = req.headers.pw;
 	const refreshToken = req.cookies.refresh_token;
 
-	User.findOne({ where: { email: userEmail.toLowerCase() } }).then(
+	User.findOne({ where: { email: userEmail.toLowerCase() }, paranoid: false }).then(
 		(user) => {
 			if (!user) {
 				return badRequestHandler(res, 'Error: User does not exist', { user_exists: false });
@@ -124,6 +125,24 @@ router.get('/login', (req, res) => {
 						);
 					}
 
+					let accountRecovered = false;
+
+					if (Number.isInteger(user.deletion_interval_in_days)) {
+						await recoverUserAccount(user.id).catch(
+							(err) => {
+								return serverErrorHandler(res, 'Error: Failed to recover user account in login', err, { user_account_recovery_failed: true });
+							}
+						);
+
+						await user.update({ deletion_interval_in_days: null }).catch(
+							(err) => {
+								return serverErrorHandler(res, 'Error: Failed to update user details in login', err, { user_update_failed: true });
+							}
+						);
+
+						accountRecovered = true;
+					}
+
 					const accessTokenPrivateKey = config.accessTokenPrivateKey.replace(/\\n/g, '\n');
 					const refreshTokenPrivateKey = config.refreshTokenPrivateKey.replace(/\\n/g, '\n');
 					const accessToken = jwt.sign({ user_id: user.id }, accessTokenPrivateKey, { expiresIn: '30m', algorithm: 'RS256' });
@@ -137,7 +156,7 @@ router.get('/login', (req, res) => {
 							res.cookie('refresh_token', newRefreshToken, req.app.get('cookieOptions'));
 
 							return res.json({
-								message: 'User logged in successfully!',
+								message: accountRecovered ? 'User account recovered successfully!' : 'User logged in successfully!',
 								user,
 								user_exists: true,
 								access_token: accessToken,
