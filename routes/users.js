@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
 router.delete('/account', accountAuthenticator, (req, res) => {
 	const userID = req.decodedUserID;
 
-	if (!req.body.deletion_interval) {
+	if (!('deletion_interval' in req.body)) {
 		return badRequestHandler(res, 'Error: Deletion interval is not specified');
 	}
 
