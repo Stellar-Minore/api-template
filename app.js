@@ -9,6 +9,7 @@ const env = process.env.NODE_ENV || 'development';
 const config = require(`${__dirname}/./config/config.json`)[env];
 const cors = require('cors');
 
+const docsRouter = require('./routes/docs');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const { deleteExpiredAccounts } = require('./helpers/globals');
@@ -30,6 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 
 app.use('/', indexRouter);
+app.use('/docs', docsRouter);
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler

@@ -20,11 +20,19 @@ const isResetCodeExpired = (resetCodeDate) => {
 
 /* GET home page. */
 router.get('/', (req, res) => {
+	/* 	#swagger.tags = ['Index'] */
 	res.render('index', { title: 'Express' });
 });
 
 /* POST signup. */
 router.post('/signup', async (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Creates user account.'
+	#swagger.responses[200] = { schema: { $ref: '#/definitions/SignUpResponse' } }
+	#swagger.responses[400, 500] = { schema: { $ref: '#/definitions/SignUpErrorResponse' } }
+	*/
+
 	if (!req.body.first_name) {
 		return badRequestHandler(res, 'Error: User first name is not specified!');
 	}
@@ -81,7 +89,15 @@ router.post('/signup', async (req, res) => {
 	);
 });
 
+/* GET login. */
 router.get('/login', (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Authenticates user.'
+	#swagger.responses[200] = { schema: { $ref: '#/definitions/LoginResponse' } }
+	#swagger.responses[400, 500] = { schema: { $ref: '#/definitions/LoginErrorResponse' } }
+	*/
+
 	if (!req.headers.email) {
 		return badRequestHandler(res, 'Error: User email is not specified!');
 	}
@@ -182,6 +198,15 @@ router.get('/login', (req, res) => {
 
 /* GET access token. */
 router.get('/access_token', (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Generates new access token.'
+	#swagger.responses[200] = { schema: { $ref: '#/definitions/GetAccessTokenResponse' } }
+	#swagger.responses[400, 403, 500] = { schema: {
+		$ref: '#/definitions/GetAccessTokenErrorResponse' }
+	}
+	*/
+
 	const refreshToken = req.cookies.refresh_token;
 
 	if (!refreshToken) {
@@ -269,6 +294,13 @@ router.get('/access_token', (req, res) => {
 
 /* GET logout. */
 router.get('/logout', (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Logs user out.'
+	#swagger.responses[200] = { schema: { message: 'User logged out successfully!' } }
+	#swagger.responses[400, 500] = { schema: { $ref: '#/definitions/LogOutErrorResponse' } }
+	*/
+
 	const refreshToken = req.cookies.refresh_token;
 
 	if (!refreshToken) {
@@ -306,6 +338,13 @@ router.get('/logout', (req, res) => {
 
 /* GET reset code. */
 router.get('/reset_code', (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Creates a reset code.'
+	#swagger.responses[200] = { schema: { message: 'Reset code successfully sent to email!' } }
+	#swagger.responses[400, 500] = { schema: { $ref: '#/definitions/GetResetCodeErrorResponse' } }
+	*/
+
 	const userEmail = req.query.email;
 
 	if (!userEmail) {
@@ -374,6 +413,13 @@ router.get('/reset_code', (req, res) => {
 
 /* POST verify reset code. */
 router.post('/verify_reset_code', (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Verifies reset code.'
+	#swagger.responses[200] = { schema: { message: 'Reset code is verified successfully!' } }
+	#swagger.responses[400, 500] = { schema: { $ref: '#/definitions/VerifyResetCodeErrorResponse' } }
+	*/
+
 	const userEmail = req.body.email;
 	const resetCode = req.body.reset_code;
 
@@ -422,6 +468,15 @@ router.post('/verify_reset_code', (req, res) => {
 
 /* POST reset password. */
 router.post('/reset_password', (req, res) => {
+	/*
+	#swagger.tags = ['Index']
+	#swagger.summary = 'Resets user password.'
+	#swagger.responses[200] = { schema: { message: 'Password updated successfully!' } }
+	#swagger.responses[400, 403, 500] = {
+		schema: { $ref: '#/definitions/ResetPasswordErrorResponse' }
+	}
+	*/
+
 	const userEmail = req.body.email;
 	const userPassword = req.body.password;
 
