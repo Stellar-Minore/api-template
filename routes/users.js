@@ -8,11 +8,25 @@ const { deleteUserAccount } = require('../helpers/globals');
 
 /* GET users listing. */
 router.get('/', (req, res) => {
+	/* #swagger.path = '/users/' #swagger.tags = ['User'] */
 	res.send('respond with a resource');
 });
 
 /* DELETE user account. */
 router.delete('/account', accountAuthenticator, (req, res) => {
+	/* #swagger.path = '/users/account'
+	#swagger.tags = ['User']
+	#swagger.summary = 'Deletes user account or marks user account for deletion.'
+	#swagger.responses[200] = { schema: {
+		message1: 'User account deleted successfully!',
+		message2: 'User account marked for deletion successfully!'
+	} }
+	#swagger.responses[400, 500] = { schema: {
+		$ref: '#/definitions/DeleteUserAccountErrorResponse' }
+	}
+	#swagger.responses[403] = { schema: { $ref: '#/definitions/ForbiddenClientErrors' } }
+	*/
+
 	const userID = req.decodedUserID;
 
 	if (!('deletion_interval' in req.body)) {

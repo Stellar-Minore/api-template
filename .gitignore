@@ -48,3 +48,5 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Swagger output file
+swagger_output.json
