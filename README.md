@@ -11,6 +11,9 @@ This project comes with a few things setup by default including
 ### Linter predefined with rules
 ### And more!
 
+## App Environment
+Node: 24
+
 ## Generating Private and Public Keys
 
 To generate a private key and a public key for use in a Node.js application, follow these steps:
